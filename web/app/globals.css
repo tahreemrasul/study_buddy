@@ -1,0 +1,50 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme inline {
+  /* Colors */
+  --color-primary:       #4f46e5;
+  --color-primary-light: #e0e7ff;
+  --color-primary-mid:   #c7d2fe;
+  --color-accent:        #f97316;
+  --color-accent-light:  #ffedd5;
+  --color-accent-mid:    #fed7aa;
+  --color-ink:           #0f0e17;
+  --color-ink-soft:      #374151;
+  --color-muted:         #6b7280;
+  --color-border:        #e5e7eb;
+  --color-border-light:  #f3f4f6;
+  --color-surface:       #fafafa;
+
+  /* Fonts */
+  --font-display: 'Lora', serif;
+  --font-mono:    'DM Mono', monospace;
+}
+
+body {
+  background: white;
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-4px); }
+}
+
+@keyframes think {
+  0%, 100% { transform: rotate(0deg); }
+  25%       { transform: rotate(-7deg) translateY(-2px); }
+  60%       { transform: rotate(4deg); }
+}
+
+.animate-float { animation: owlFloat 4s ease-in-out infinite; }
+.animate-think { animation: think 3.5s ease-in-out infinite; }
+.pixelated     { image-rendering: pixelated; }
+
+@keyframes sweep {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+.animate-sweep { animation: sweep 1.4s ease infinite; }

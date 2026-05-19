@@ -7,7 +7,8 @@ __pycache__/
 .venv/
 env/
 venv/
-api/test.py
+api/study_guide/test.py
+api/study_guide/standard_response.json
 
 # Node / Next.js
 web/node_modules/

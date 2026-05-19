@@ -1,0 +1,16 @@
+# Core
+google-adk==1.10.0
+google-genai==1.29.0
+python-dotenv==1.1.1
+litellm==1.80.7
+
+# Search tools
+arxiv==2.2.0
+wikipedia==1.4.0
+
+# Server
+fastapi==0.116.1
+uvicorn==0.35.0
+pydantic==2.11.7
+pydantic-core==2.33.2
+httpx==0.28.1

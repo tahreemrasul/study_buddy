@@ -11,7 +11,7 @@ Each query should target a distinct subarea, angle, or key concept needed to und
 
 Output Requirements:
 - Generate 2 concise search queries.
-- Each query should be phrased naturally and contain 5–10 words.
+- Each query should be phrased naturally and contain 5-10 words.
 - Avoid overlapping themes between queries.
 - Do not include explanations or metadata — only return the queries as a numbered list.
 

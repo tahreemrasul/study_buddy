@@ -41,25 +41,58 @@ function parseQA(raw: string): QAPair[] {
   }
 }
 
+// Read a File as base64 (without the "data:...;base64," prefix)
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve((reader.result as string).split(",")[1] ?? "");
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
 export function useStudySession() {
   const [state, setState] = useState<StudyState>(INITIAL_STATE);
 
-  const generate = useCallback(async (topic: string) => {
-    if (!topic.trim()) return;
+  const generate = useCallback(async (topic: string, file?: File | null) => {
+    if (!topic.trim() && !file) return;
 
     // Reset state and mark as streaming
-    setState({ ...INITIAL_STATE, topic, isStreaming: true });
+    setState({
+      ...INITIAL_STATE,
+      topic:       topic.trim() || file!.name,
+      source:      file ? { name: file.name, status: "reading" } : null,
+      isStreaming: true,
+    });
 
     // Generate a unique session ID per run
     const sessionId = `s_${Date.now()}`;
 
     try {
-      // 1. Create session
-      await fetch(`${BASE_URL}/apps/${APP_NAME}/users/${USER_ID}/sessions/${sessionId}`, {
+      // 1. Create session. A PDF rides along as source_pdf: the proxy parses it
+      //    and creates the session with its text already in state.
+      const sessionBody = file
+        ? { source_pdf: { name: file.name, data: await fileToBase64(file) } }
+        : {};
+      const sessionRes = await fetch(`${BASE_URL}/apps/${APP_NAME}/users/${USER_ID}/sessions/${sessionId}`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({}),
+        body:    JSON.stringify(sessionBody),
       });
+
+      if (file) {
+        const sessionState = (await sessionRes.json())?.state ?? {};
+        setState(s => ({
+          ...s,
+          source: sessionState.source_name
+            ? { name: file.name, status: "ready", truncated: !!sessionState.source_truncated }
+            : { name: file.name, status: "error", error: sessionState.source_error ?? "Could not read PDF" },
+        }));
+      }
+
+      const parts = [
+        { text: topic.trim() || "Create a study guide from the attached document." },
+      ];
 
       // 2. Open SSE stream
       const response = await fetch(`${BASE_URL}/run_sse`, {
@@ -71,7 +104,7 @@ export function useStudySession() {
           sessionId,
           newMessage: {
             role:  "user",
-            parts: [{ text: topic }],
+            parts,
           },
           streaming: false,
         }),

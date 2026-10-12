@@ -8,8 +8,16 @@ export type QAPair = {
 
 export type StepStatus = "idle" | "active" | "done";
 
+export type SourceDoc = {
+  name:   string;
+  status:     "reading" | "ready" | "error";
+  error?:     string;
+  truncated?: boolean;   // text was cut to the proxy's character limit
+};
+
 export type StudyState = {
   topic:       string;
+  source:      SourceDoc | null;   // uploaded PDF, if any
   activeStep:  number;        // 0 = not started, 1-6 = current step
   overview:    string | null;
   queries:     string | null;
@@ -22,6 +30,7 @@ export type StudyState = {
 
 export const INITIAL_STATE: StudyState = {
   topic:       "",
+  source:      null,
   activeStep:  0,
   overview:    null,
   queries:     null,

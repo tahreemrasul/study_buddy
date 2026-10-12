@@ -13,9 +13,9 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("progress");
   const { state, generate }       = useStudySession();
 
-  async function handleGenerate(topic: string) {
+  async function handleGenerate(topic: string, file: File | null) {
     setActiveTab("progress");
-    generate(topic);
+    generate(topic, file);
   }
 
   return (

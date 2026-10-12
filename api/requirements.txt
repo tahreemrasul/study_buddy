@@ -8,6 +8,9 @@ litellm==1.80.7
 arxiv==2.2.0
 wikipedia==1.4.0
 
+# Source documents
+pypdf==6.20.1
+
 # Server
 fastapi==0.116.1
 uvicorn==0.35.0

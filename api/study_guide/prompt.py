@@ -13,6 +13,10 @@ Workflow:
 Initiation:
 Greet the user. Ask the user to provide a topic they want to study. Prompt them to optionally upload a supplemental document (e.g., lecture notes or research paper as a pdf).
 
+Source Document:
+{source_note?}
+If a source document is attached, sub-agents read it from shared state. Only pass them the topic and the outputs of previous steps, as described below.
+
 Topic Analysis & Overview (Context Building):
 Inform the user that you will proceed to create a high-level overview of provided topic.
 Action: Invoke the topic_overview_agent using the given topic.

@@ -204,6 +204,18 @@ export default function ProgressTab({ state }: Props) {
         </div>
       )}
 
+      {/* Reading the uploaded PDF — before the first agent starts */}
+      {isStreaming && activeStep === 0 && state.source?.status === "reading" && (
+        <div className="flex items-center gap-3 bg-primary-light border border-primary-mid
+                        rounded-lg px-4 py-2.5 mb-8">
+          <Image src="/owls/owl_think.png" alt="" width={38} height={38}
+            className="pixelated animate-think flex-shrink-0" />
+          <span className="text-[0.68rem] text-primary flex-1">
+            Reading {state.source.name}...
+          </span>
+        </div>
+      )}
+
       {/* Not started state */}
       {!isStreaming && activeStep === 0 && (
         <div className="flex items-center gap-3 bg-surface border border-border
@@ -211,7 +223,7 @@ export default function ProgressTab({ state }: Props) {
           <Image src="/owls/owl_idle.png" alt="" width={38} height={38}
             className="pixelated animate-float flex-shrink-0" />
           <span className="text-[0.68rem] text-muted">
-            Enter a topic above and hit Generate to start.
+            Enter a topic or attach a PDF above and hit Generate to start.
           </span>
         </div>
       )}
@@ -235,6 +247,42 @@ export default function ProgressTab({ state }: Props) {
       </p>
 
       <div className="flex flex-col gap-3">
+        {/* Source document card */}
+        {state.source && (() => {
+          const { name, status, error, truncated } = state.source;
+          const badgeStatus = status === "reading" ? "active" : status === "ready" ? "done" : "idle";
+          return (
+            <div className={`border rounded-[10px] bg-white overflow-hidden
+                            ${status === "reading" ? "border-primary-mid" : "border-border"}`}>
+              <div className={`flex items-center justify-between px-[18px] py-3 min-h-[52px]
+                               ${status === "reading" ? "bg-primary-light" : ""}`}>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className={`text-[0.58rem] font-medium px-2 py-0.5 rounded w-[100px] text-center
+                                    uppercase tracking-wide flex-shrink-0 ${badgeClass(badgeStatus)}`}>
+                    Source
+                  </span>
+                  <span className={`font-display text-[0.88rem] font-semibold truncate
+                                    ${status === "reading" ? "text-primary" : "text-ink"}`}>
+                    {name}
+                  </span>
+                </div>
+                <span className={`text-[0.6rem] flex-shrink-0 ml-3
+                                  ${status === "reading" ? "text-primary"
+                    : status === "ready" ? "text-accent" : "text-muted"}`}>
+                  {status === "reading" ? "reading"
+                    : status === "ready" ? (truncated ? "used as primary source (truncated)" : "used as primary source")
+                      : "not used"}
+                </span>
+              </div>
+              {status === "error" && (
+                <div className="px-[18px] py-3 text-[0.7rem] text-muted border-t border-border-light">
+                  {error} — continuing without it.
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         {STEP_LABELS.map((label, i) => {
           const status = stepStatus(i, activeStep);
 

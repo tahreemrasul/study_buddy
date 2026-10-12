@@ -10,15 +10,36 @@ const EXAMPLE_TOPICS = [
   "dropout in neural networks",
 ];
 
+const MAX_PDF_MB = 10;
+
 interface Props {
-  onGenerate: (topic: string) => void;
+  onGenerate: (topic: string, file: File | null) => void;
   isStreaming: boolean;
 }
 
 export default function InputSection({ onGenerate, isStreaming }: Props) {
   const [topic, setTopic] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const picked = e.target.files?.[0];
+    e.target.value = "";  // allow re-picking the same file
+    if (!picked) return;
+    if (picked.type !== "application/pdf") {
+      setFileError("Only PDF files are supported.");
+      return;
+    }
+    if (picked.size > MAX_PDF_MB * 1024 * 1024) {
+      setFileError(`PDF is too large (max ${MAX_PDF_MB} MB).`);
+      return;
+    }
+    setFileError(null);
+    setFile(picked);
+  }
 
   function handleInput(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setTopic(e.target.value);
@@ -42,7 +63,7 @@ export default function InputSection({ onGenerate, isStreaming }: Props) {
         What do you want to <em className="text-primary">learn today?</em>
       </h1>
       <p className="text-[0.72rem] text-muted leading-relaxed mb-7">
-        Type any topic — short or detailed. Six agents build your complete study guide.
+        Type any topic — short or detailed — or attach a PDF of your notes. Six agents build your complete study guide.
       </p>
 
       {/* Input card */}
@@ -93,27 +114,65 @@ export default function InputSection({ onGenerate, isStreaming }: Props) {
                 </button>
               ))}
             </div>
-            <button
-              onClick={() => onGenerate(topic)}
-              disabled={isStreaming || !topic.trim()}
-              className="flex items-center gap-2 bg-primary text-white text-[0.68rem]
-             font-medium tracking-wide px-5 py-2.5 rounded-lg
-             hover:bg-indigo-700 transition-all shadow-md shadow-indigo-200
-             disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"
-            >
-              {isStreaming ? (
-                <>
-                  <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                  Generating...
-                </>
+            <div className="flex items-center gap-2">
+              <input
+                ref={fileInput}
+                type="file"
+                accept="application/pdf"
+                onChange={handleFile}
+                className="hidden"
+              />
+              {file ? (
+                <span className="flex items-center gap-2 bg-accent-light text-accent border border-accent-mid
+                                 text-[0.68rem] font-medium tracking-wide pl-4 pr-2 py-2.5 rounded-lg">
+                  <span className="max-w-[160px] truncate">{file.name}</span>
+                  <button
+                    onClick={() => setFile(null)}
+                    disabled={isStreaming}
+                    aria-label="Remove PDF"
+                    className="w-5 h-5 rounded leading-none hover:bg-accent-mid transition-all
+                               disabled:cursor-not-allowed"
+                  >
+                    ×
+                  </button>
+                </span>
               ) : (
-                <>
-                  <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                  Generate guide
-                </>
+                <button
+                  onClick={() => fileInput.current?.click()}
+                  disabled={isStreaming}
+                  className="flex items-center gap-2 bg-white border border-primary-mid text-primary text-[0.68rem]
+                             font-medium tracking-wide px-5 py-2.5 rounded-lg
+                             hover:bg-primary-light transition-all
+                             disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  + Attach PDF
+                </button>
               )}
-            </button>
+              <button
+                onClick={() => onGenerate(topic, file)}
+                disabled={isStreaming || (!topic.trim() && !file)}
+                className="flex items-center gap-2 bg-primary border border-primary text-white text-[0.68rem]
+               font-medium tracking-wide px-5 py-2.5 rounded-lg
+               hover:bg-indigo-700 transition-all shadow-md shadow-indigo-200
+               disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"
+              >
+                {isStreaming ? (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                    Generate guide
+                  </>
+                )}
+              </button>
+            </div>
           </div>
+          {fileError && (
+            <p className="text-[0.6rem] text-accent mt-2">{fileError}</p>
+          )}
         </div>
       </div>
     </section>

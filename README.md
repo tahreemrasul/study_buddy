@@ -8,6 +8,14 @@ session with that text already in state (`source_material`), so the document nev
 The overview, query, outline and study guide agents read it through `{source_material?}` in their prompts,
 and web search only fills gaps.
 
+## Workshop notebook
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tahreemrasul/study_buddy/blob/main/workshop/study_buddy_workshop.ipynb)
+
+[`workshop/study_buddy_workshop.ipynb`](workshop/study_buddy_workshop.ipynb) builds the backend agents step by step in Colab,
+from a single root agent to the full grounded pipeline served with `adk api_server`. It only needs a Gemini API key
+from Google AI Studio. The sample PDF it uses lives in `workshop/data/`.
+
 ## Architecture
 
 | Component | Location | Port | Role |

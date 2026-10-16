@@ -36,37 +36,42 @@
   .grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
   .grid6 { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; }
   .note { font-size:12px; color:var(--muted); margin-top:16px; }
+
+  .ag-in { border:1.5px solid var(--border); border-radius:10px; padding:9px 12px; font-size:12.5px; background:#fff; }
+  .ag-in.opt { border-style:dashed; background:var(--surface); }
+  .ag-in code { font-size:12px; }
+  .ag-in small { display:block; color:var(--muted); font-size:11px; margin-top:2px; }
+  .label { font-size:10.5px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin-bottom:8px; font-weight:500; }
 </style></head><body>
 
 <!-- D1: system architecture -->
 <section id="d_architecture">
-  <h2>Study Buddy: the full system</h2>
-  <p class="sub">Three processes. Today we build everything inside the dashed box in Colab; the frontend we walk through in the repo.</p>
+  <h2>Study Buddy architecture</h2>
+  <p class="sub">Three processes. We build the backend (dashed box) in this notebook. The frontend and proxy are in the repo.</p>
   <div class="row" style="align-items:stretch">
     <div class="box g" style="width:200px">
       <span class="tag o">frontend</span><b>Next.js UI</b>
-      <small>localhost:3000</small><br>Topic box, Attach PDF, Progress / Study Guide / Q&amp;A tabs
+      <small>localhost:3000</small><br>What users see. They type a topic or attach a PDF and watch the results come in.
     </div>
     <div class="arrow"><span>HTTP + SSE</span><span class="line">⟶</span></div>
     <div class="box g" style="width:210px">
       <span class="tag o">proxy</span><b>FastAPI</b>
-      <small>localhost:8001</small><br>Adds CORS headers, streams events, turns an uploaded PDF into session state
+      <small>localhost:8001</small><br>Sits between the browser and ADK. Handles CORS and converts uploaded PDFs to text.
     </div>
-    <div class="arrow"><span>same API</span><span class="line">⟶</span></div>
+    <div class="arrow"><span>forwards</span><span class="line">⟶</span></div>
     <div class="dash" style="flex:1">
-      <span class="tag">backend · built in this notebook</span>
+      <span class="tag">backend · this notebook</span>
       <div class="row" style="margin-top:10px; align-items:stretch">
         <div class="box p" style="flex:1">
           <b>ADK api_server</b><small>localhost:8000</small>
-          <span class="chip p">study_guide</span> root agent<br>
-          + 6 specialist agents
+          Serves the <span class="chip p">study_guide</span> root agent and its 6 sub-agents
         </div>
         <div class="col" style="justify-content:center">
           <div class="arrow"><span class="line">⟶</span></div>
         </div>
         <div class="col" style="width:170px">
-          <div class="box a"><b>Gemini API</b><small>gemini-3.8-flash · AI Studio key</small></div>
-          <div class="box g"><b>Wikipedia · arXiv</b><small>search tools</small></div>
+          <div class="box a"><b>Gemini API</b><small>gemini-3.8-flash, AI Studio key</small></div>
+          <div class="box g"><b>Wikipedia, arXiv</b><small>used by the search agent</small></div>
         </div>
       </div>
     </div>
@@ -75,32 +80,32 @@
 
 <!-- D2: roadmap -->
 <section id="d_roadmap">
-  <h2>How we'll build it</h2>
-  <p class="sub">Each step adds one agent or one idea. Every step runs on its own, so you always have something working.</p>
+  <h2>Build order</h2>
+  <p class="sub">Each step adds one agent or one concept, and each one runs on its own.</p>
   <div class="grid4">
-    <div class="box p"><span class="num">1</span><b style="display:inline">Root agent</b><br><small>one agent does everything · Runner, sessions, events</small></div>
-    <div class="box p"><span class="num">2</span><b style="display:inline">First specialist</b><br><small>topic overview · <code>output_key</code>, <code>AgentTool</code></small></div>
-    <div class="box p"><span class="num">3</span><b style="display:inline">Research</b><br><small>query planner + search agent · function tools</small></div>
-    <div class="box p"><span class="num">4</span><b style="display:inline">Outline &amp; guide</b><br><small>passing context between steps</small></div>
-    <div class="box a"><span class="num o">5</span><b style="display:inline">Q&amp;A</b><br><small>machine-readable output for the UI</small></div>
-    <div class="box a"><span class="num o">6</span><b style="display:inline">Full pipeline</b><br><small>the orchestrator prompt · reading the event stream</small></div>
-    <div class="box a"><span class="num o">7</span><b style="display:inline">Your own PDF</b><br><small>grounding via session state · <code>{source_material?}</code></small></div>
-    <div class="box a"><span class="num o">8</span><b style="display:inline">Serve it</b><br><small><code>adk api_server</code> endpoints · then the frontend</small></div>
+    <div class="box p"><span class="num">1</span><b style="display:inline">Root agent</b><br><small>a single agent that does everything. Runner, sessions, events</small></div>
+    <div class="box p"><span class="num">2</span><b style="display:inline">First specialist</b><br><small>the overview agent. State, <code>output_key</code>, <code>AgentTool</code></small></div>
+    <div class="box p"><span class="num">3</span><b style="display:inline">Research</b><br><small>query planner and search agent. Functions as tools</small></div>
+    <div class="box p"><span class="num">4</span><b style="display:inline">Outline &amp; guide</b><br><small>passing results from one step to the next</small></div>
+    <div class="box a"><span class="num o">5</span><b style="display:inline">Q&amp;A</b><br><small>JSON output the frontend can render</small></div>
+    <div class="box a"><span class="num o">6</span><b style="display:inline">Full pipeline</b><br><small>the orchestrator runs all six sub-agents</small></div>
+    <div class="box a"><span class="num o">7</span><b style="display:inline">Your own PDF</b><br><small>PDF text in session state, read with <code>{source_material?}</code></small></div>
+    <div class="box a"><span class="num o">8</span><b style="display:inline">Serve it</b><br><small><code>adk api_server</code>, then a look at the frontend</small></div>
   </div>
-  <p class="note">Plus a design checkpoint between 7 and 8: do we even need an LLM to orchestrate?</p>
+  <p class="note">Between 7 and 8 we stop and ask whether we need the orchestrator at all.</p>
 </section>
 
 <!-- D3: ADK concepts -->
 <section id="d_adk">
-  <h2>ADK in one picture</h2>
-  <p class="sub">You define agents. The Runner executes them, records everything in a Session, and streams Events back to you.</p>
+  <h2>How ADK runs an agent</h2>
+  <p class="sub">You define the agent. The Runner calls the model, runs tools, and records every step in a session.</p>
   <div class="row" style="align-items:stretch">
-    <div class="box g" style="width:170px"><b>Your code</b>sends a user message<br><br><small>and reads the stream of events that comes back</small></div>
+    <div class="box g" style="width:170px"><b>Your code</b>sends the user's message<br><br><small>and reads events as they come back</small></div>
     <div class="col" style="justify-content:center">
       <div class="arrow"><span>message</span><span class="line">⟶</span></div>
       <div class="arrow o"><span class="line">⟵</span><span>events</span></div>
     </div>
-    <div class="box p" style="width:210px"><b>Runner</b>runs the agent loop:<ul><li>build prompt</li><li>call model</li><li>run tools</li><li>save events</li></ul></div>
+    <div class="box p" style="width:210px"><b>Runner</b>repeats until the model is done:<ul><li>build the prompt</li><li>call the model</li><li>run any tool it asks for</li><li>save each step as an event</li></ul></div>
     <div class="col" style="flex:1">
       <div class="row">
         <div class="box p" style="flex:1"><b>Agent (LlmAgent)</b><code>model</code> · <code>instruction</code> · <code>tools</code> · <code>output_key</code></div>
@@ -110,7 +115,7 @@
       <div class="box g"><b>SessionService → Session</b>
         <span class="chip p">events: [ user, model, tool call, tool result, … ]</span><br>
         <span class="chip">state: { "topic_overview": "…", "outline": "…" }</span>
-        <small style="margin-top:6px">State is a shared dict. Agents write to it (<code>output_key</code>) and read from it (<code>{key}</code> in an instruction).</small>
+        <small style="margin-top:6px">Agents write to state with <code>output_key</code> and read from it with <code>{key}</code> in their instruction.</small>
       </div>
     </div>
   </div>
@@ -118,25 +123,25 @@
 
 <!-- D4: monolith vs specialists -->
 <section id="d_monolith">
-  <h2>One big agent vs. a team of specialists</h2>
-  <p class="sub">The single agent works, but you can't see, control, ground or reuse its steps.</p>
+  <h2>One agent vs. several</h2>
+  <p class="sub">The single agent works, but you can't see its steps, ground it in a document, or reuse its parts.</p>
   <div class="row" style="align-items:stretch; gap:28px">
     <div class="col" style="width:380px">
       <div class="box g"><b>study_guide</b>"Write a study guide on X."<br><small>one prompt, one model call</small></div>
       <div class="box" style="border-style:dashed"><ul style="font-size:12.5px">
-        <li>No research: only what the model remembers</li>
+        <li>No research, only what the model remembers</li>
         <li>No progress to show the user</li>
         <li>Can't reuse the outline or Q&amp;A on their own</li>
         <li>Hard to fix one step without breaking others</li></ul></div>
     </div>
     <div class="col" style="flex:1">
-      <div class="box p" style="text-align:center"><b>study_guide · orchestrator</b><small>decides which specialist to call next</small></div>
+      <div class="box p" style="text-align:center"><b>study_guide (orchestrator)</b><small>decides which sub-agent to call next</small></div>
       <div class="down">⟱</div>
       <div class="grid6">
         <div class="box a"><b>overview</b></div><div class="box a"><b>queries</b></div><div class="box a"><b>search</b><small>+ tools</small></div>
         <div class="box a"><b>outline</b></div><div class="box a"><b>guide</b></div><div class="box a"><b>Q&amp;A</b></div>
       </div>
-      <small class="note">Small focused prompts · each result saved to state · each step visible in the UI</small>
+      <small class="note">Each sub-agent has a short prompt, saves its result to state, and shows up as a step in the UI.</small>
     </div>
   </div>
 </section>
@@ -144,32 +149,32 @@
 <!-- D5: AgentTool vs sub_agents -->
 <section id="d_agenttool">
   <h2>Two ways to connect agents in ADK</h2>
-  <p class="sub">Study Buddy uses <code>AgentTool</code>: the root agent stays in charge and gets each result back.</p>
+  <p class="sub">We use <code>AgentTool</code>, so the root agent keeps control and gets each result back.</p>
   <div class="row" style="align-items:stretch; gap:28px">
     <div class="box p" style="flex:1">
       <b>tools=[AgentTool(child)]</b>
       <div class="row" style="margin:12px 0"><div class="box" style="padding:8px 12px">root</div><div class="arrow"><span>request text</span><span class="line">⟶</span></div><div class="box" style="padding:8px 12px">child</div><div class="arrow o"><span class="line">⟵</span><span>result</span></div><div class="box" style="padding:8px 12px">root continues</div></div>
-      <ul><li>Child runs like a function call</li><li>Child sees only the request text <b style="display:inline;font-size:13px">+ a copy of session state</b></li><li>Root decides what happens next</li></ul>
+      <ul><li>The child runs like a function call</li><li>It only sees the request text <b style="display:inline;font-size:13px">and a copy of session state</b></li><li>The root decides what happens next</li></ul>
     </div>
     <div class="box g" style="flex:1">
       <b>sub_agents=[child]</b>
       <div class="row" style="margin:12px 0"><div class="box" style="padding:8px 12px">root</div><div class="arrow"><span>transfer</span><span class="line">⟶</span></div><div class="box" style="padding:8px 12px">child talks to the user</div></div>
-      <ul><li>Control moves to the child</li><li>Child sees the whole conversation</li><li>Good for routing (e.g. "billing" vs "support")</li></ul>
+      <ul><li>Control moves to the child</li><li>It sees the whole conversation</li><li>Useful for routing, like "billing" vs "support"</li></ul>
     </div>
   </div>
 </section>
 
 <!-- D6: tool loop -->
 <section id="d_tools">
-  <h2>How a function becomes a tool</h2>
-  <p class="sub">ADK reads the function's name, type hints and docstring and describes it to Gemini. Gemini decides when to call it.</p>
+  <h2>Functions as tools</h2>
+  <p class="sub">ADK turns the function's name, type hints and docstring into a tool description. Gemini decides when to call it.</p>
   <div class="row" style="align-items:stretch">
-    <div class="box g" style="width:250px"><b>def search_wikipedia(query: str)</b><small>"""Search for information on Wikipedia"""</small><br><span class="chip p">name</span><span class="chip p">params</span><span class="chip p">docstring</span><small>→ sent to the model as a tool schema</small></div>
+    <div class="box g" style="width:250px"><b>def search_wikipedia(query: str)</b><small>"""Search for information on Wikipedia"""</small><br><span class="chip p">name</span><span class="chip p">params</span><span class="chip p">docstring</span><small>sent to the model as the tool's description</small></div>
     <div class="col" style="flex:1">
       <div class="row"><span class="num">1</span><div class="box p" style="flex:1">Gemini replies with a <b style="display:inline;font-size:13px">function call</b>: <code>search_wikipedia(query="photosynthesis light reactions")</code></div></div>
       <div class="row"><span class="num">2</span><div class="box" style="flex:1">ADK runs your Python function and sends the <b style="display:inline;font-size:13px">result</b> back to Gemini</div></div>
-      <div class="row"><span class="num">3</span><div class="box p" style="flex:1">Gemini calls more tools <small style="display:inline">(arXiv, another query…)</small> or writes the final answer</div></div>
-      <div class="row"><span class="num o">4</span><div class="box a" style="flex:1">Final answer saved to <code>state["search"]</code> via <code>output_key</code></div></div>
+      <div class="row"><span class="num">3</span><div class="box p" style="flex:1">Gemini calls another tool <small style="display:inline">(arXiv, a second query)</small> or writes its answer</div></div>
+      <div class="row"><span class="num o">4</span><div class="box a" style="flex:1">The answer is saved to <code>state["search"]</code> because of <code>output_key</code></div></div>
     </div>
   </div>
 </section>
@@ -177,8 +182,8 @@
 <!-- D7: full pipeline -->
 <section id="d_pipeline">
   <h2>The full pipeline</h2>
-  <p class="sub">The orchestrator calls each specialist in turn, passing the previous outputs in its request. Every result also lands in session state.</p>
-  <div class="box p" style="text-align:center; margin-bottom:6px"><b>study_guide (root) · ORCHESTRATOR_PROMPT</b><small>"overview → queries → search → outline → guide → Q&amp;A, don't wait for the user between steps"</small></div>
+  <p class="sub">The orchestrator calls each sub-agent in order and passes earlier results in its request. Each result is also saved to session state.</p>
+  <div class="box p" style="text-align:center; margin-bottom:6px"><b>study_guide (root) · ORCHESTRATOR_PROMPT</b><small>runs overview, queries, search, outline, guide and Q&amp;A without stopping to ask the user</small></div>
   <div class="grid6" style="text-align:center; margin:2px 0">
     <div class="down">⇅</div><div class="down">⇅</div><div class="down">⇅</div><div class="down">⇅</div><div class="down">⇅</div><div class="down">⇅</div>
   </div>
@@ -192,50 +197,128 @@
   </div>
   <div class="box g" style="margin-top:14px"><span class="tag">session state after a run</span><br>
     <span class="chip">topic_overview</span><span class="chip">search_queries</span><span class="chip">search</span><span class="chip">outline</span><span class="chip">study_guide</span><span class="chip">question_answer</span>
-    <small style="margin-top:4px">The frontend watches these keys appear in the event stream and fills in one card per key.</small></div>
+    <small style="margin-top:4px">The frontend fills in one card per key as they arrive.</small></div>
 </section>
 
 <!-- D8: grounding -->
 <section id="d_grounding">
-  <h2>Getting your PDF to every agent</h2>
-  <p class="sub">Specialists only receive the orchestrator's request text, but they all get a copy of session state. So the document goes into state when the session is created.</p>
+  <h2>Getting the PDF to every sub-agent</h2>
+  <p class="sub">Sub-agents only get the orchestrator's request text, but they all get a copy of session state. So we put the PDF text in state when the session is created.</p>
   <div class="row" style="align-items:stretch">
     <div class="box g" style="width:150px"><b>lecture.pdf</b><small>uploaded by the user</small></div>
     <div class="arrow"><span>pypdf</span><span class="line">⟶</span></div>
-    <div class="box g" style="width:160px"><b>plain text</b><small>deterministic, no AI rewriting</small></div>
+    <div class="box g" style="width:160px"><b>plain text</b><small>extracted by a parser, not rewritten by a model</small></div>
     <div class="arrow"><span>create_session(<br>state=…)</span><span class="line">⟶</span></div>
     <div class="box p" style="flex:1"><b>Session state</b><span class="chip">source_material: "Lecture 7: …"</span><span class="chip">source_name: "lecture.pdf"</span><span class="chip">source_note: "…"</span></div>
   </div>
   <div class="row" style="margin-top:16px; align-items:stretch">
-    <div class="box" style="flex:1; border-style:dashed"><span class="tag">orchestrator</span><b>sees only <code>{source_note?}</code></b><small>"A document is attached; sub-agents can read it." The PDF itself never enters the conversation.</small></div>
-    <div class="box a" style="flex:2"><span class="tag o">overview · queries · outline · guide</span><b>read <code>{source_material?}</code> in their instructions</b><small>ADK fills the placeholder from state. The <code>?</code> makes it optional: empty when no PDF was uploaded.</small></div>
+    <div class="box" style="flex:1; border-style:dashed"><span class="tag">orchestrator</span><b>sees only <code>{source_note?}</code></b><small>A one-line note that a document is attached. The PDF itself never enters the conversation.</small></div>
+    <div class="box a" style="flex:2"><span class="tag o">overview · queries · outline · guide</span><b>read <code>{source_material?}</code> in their instructions</b><small>ADK fills the placeholder from state. The <code>?</code> makes it optional, so it's empty when there's no PDF.</small></div>
   </div>
 </section>
 
 <!-- D9: orchestrator vs sequential -->
 <section id="d_sequential">
-  <h2>Design checkpoint: who decides the order?</h2>
-  <p class="sub">Our steps always run in the same order. Do we need a model to decide that each time?</p>
+  <h2>Who decides the order?</h2>
+  <p class="sub">The steps always run in the same order. Does a model need to decide that every time?</p>
   <div class="row" style="align-items:stretch; gap:28px">
     <div class="box p" style="flex:1"><b>LLM orchestrator (what the app does)</b>
       <div class="row" style="margin:10px 0; flex-wrap:wrap; gap:6px"><span class="chip p">LLM: what next?</span>→<span class="chip">overview</span>→<span class="chip p">LLM: what next?</span>→<span class="chip">queries</span>→<span class="chip p">…</span></div>
-      <ul><li>Flexible: can handle follow-up requests</li><li>Extra model call before and after every step</li><li>Can skip steps or stop to ask the user</li></ul></div>
+      <ul><li>Can handle follow-up requests</li><li>Spends model calls deciding and presenting</li><li>Can skip a step or stop to ask the user</li></ul></div>
     <div class="box a" style="flex:1"><b>SequentialAgent</b>
       <div class="row" style="margin:10px 0; flex-wrap:wrap; gap:6px"><span class="chip">overview</span>→<span class="chip">queries</span>→<span class="chip">search</span>→<span class="chip">outline</span>→<span class="chip">guide</span>→<span class="chip">Q&amp;A</span></div>
-      <ul><li>Fixed order, guaranteed every time</li><li>No "deciding" calls: fewer model calls and tokens</li><li>Steps read inputs from state: <code>{outline}</code></li></ul></div>
+      <ul><li>Same order every time</li><li>No extra model calls for orchestration</li><li>Each step reads its inputs from state, like <code>{outline}</code></li></ul></div>
   </div>
-  <p class="note">Rule of thumb: use an LLM where a decision really depends on the content (which tool to search with), and plain code where it doesn't.</p>
+  <p class="note">Use a model where the decision depends on the content, like picking a search tool. Use fixed code where it doesn't.</p>
 </section>
 
 <!-- D10: endpoints -->
 <section id="d_endpoints">
   <h2>The backend API</h2>
-  <p class="sub"><code>adk api_server</code> turns the agent folder into an HTTP API. These three calls are all the frontend uses.</p>
+  <p class="sub"><code>adk api_server</code> serves the agent folder over HTTP. The frontend only needs these three calls.</p>
   <div class="col">
-    <div class="row"><span class="num">1</span><div class="box g" style="width:330px"><code>GET /list-apps</code></div><div class="arrow"><span class="line">⟶</span></div><div class="box" style="flex:1"><code>["study_guide"]</code> <small style="display:inline">· which agent folders were found</small></div></div>
-    <div class="row"><span class="num">2</span><div class="box p" style="width:330px"><code>POST /apps/study_guide/users/u1/sessions/s1</code><small>body = initial state, e.g. <code>{"source_material": "…"}</code></small></div><div class="arrow"><span class="line">⟶</span></div><div class="box" style="flex:1">a new session with that state <small style="display:inline">· this is where the PDF text goes</small></div></div>
-    <div class="row"><span class="num o">3</span><div class="box a" style="width:330px"><code>POST /run_sse</code><small>body = app, user, session + <code>newMessage</code></small></div><div class="arrow o"><span class="line">⟶</span></div><div class="box" style="flex:1">a stream of <b style="display:inline;font-size:13px">events</b>, one per line: <span class="chip p">functionCall: outline_agent</span><span class="chip">stateDelta: {"outline": …}</span></div></div>
+    <div class="row"><span class="num">1</span><div class="box g" style="width:330px"><code>GET /list-apps</code></div><div class="arrow"><span class="line">⟶</span></div><div class="box" style="flex:1"><code>["study_guide"]</code> <small style="display:inline">the agent apps it found</small></div></div>
+    <div class="row"><span class="num">2</span><div class="box p" style="width:330px"><code>POST /apps/study_guide/users/u1/sessions/s1</code><small>body = initial state, e.g. <code>{"source_material": "…"}</code></small></div><div class="arrow"><span class="line">⟶</span></div><div class="box" style="flex:1">a new session with that state <small style="display:inline">(this is where the PDF text goes)</small></div></div>
+    <div class="row"><span class="num o">3</span><div class="box a" style="width:330px"><code>POST /run_sse</code><small>body = app, user, session + <code>newMessage</code></small></div><div class="arrow o"><span class="line">⟶</span></div><div class="box" style="flex:1">a stream of <b style="display:inline;font-size:13px">events</b>, one per line <span class="chip p">functionCall: outline_agent</span><span class="chip">stateDelta: {"outline": …}</span></div></div>
   </div>
 </section>
 
+
+<section id="a_topic_overview_agent" style="width:1000px">
+  <div class="row" style="align-items:stretch; gap:16px">
+    <div class="col" style="width:300px; gap:8px"><div class="label">inputs</div><div class="ag-in"><code>topic</code><small>the orchestrator's request (the user's topic)</small></div><div class="ag-in opt"><code>source_material</code><small>session state, if a PDF was uploaded (section 7)</small></div></div>
+    <div class="col" style="justify-content:center"><div class="arrow"><span class="line">⟶</span></div></div>
+    <div class="box p" style="flex:1; display:flex; flex-direction:column; justify-content:center">
+      <span class="tag">① Topic overview</span><b style="font-size:17px">topic_overview_agent</b>Writes a short paragraph introducing the topic.
+    </div>
+    <div class="col" style="justify-content:center"><div class="arrow o"><span class="line">⟶</span></div></div>
+    <div class="col" style="width:240px; justify-content:center; gap:8px"><div class="label">output</div>
+      <div class="box a"><small style="color:#c2410c">saved to state as</small><b>"topic_overview"</b><small>read by the query planner, outline and study guide agents</small></div></div>
+  </div>
+</section>
+
+<section id="a_search_query_agent" style="width:1000px">
+  <div class="row" style="align-items:stretch; gap:16px">
+    <div class="col" style="width:300px; gap:8px"><div class="label">inputs</div><div class="ag-in"><code>topic_overview</code><small>from ① topic overview</small></div><div class="ag-in opt"><code>source_material</code><small>session state, if a PDF was uploaded (section 7)</small></div></div>
+    <div class="col" style="justify-content:center"><div class="arrow"><span class="line">⟶</span></div></div>
+    <div class="box p" style="flex:1; display:flex; flex-direction:column; justify-content:center">
+      <span class="tag">② Query planner</span><b style="font-size:17px">search_query_agent</b>Turns the overview into 2 focused search queries.
+    </div>
+    <div class="col" style="justify-content:center"><div class="arrow o"><span class="line">⟶</span></div></div>
+    <div class="col" style="width:240px; justify-content:center; gap:8px"><div class="label">output</div>
+      <div class="box a"><small style="color:#c2410c">saved to state as</small><b>"search_queries"</b><small>read by the search agent</small></div></div>
+  </div>
+</section>
+
+<section id="a_search_agent" style="width:1000px">
+  <div class="row" style="align-items:stretch; gap:16px">
+    <div class="col" style="width:300px; gap:8px"><div class="label">inputs</div><div class="ag-in"><code>search_queries</code><small>from ② query planner</small></div></div>
+    <div class="col" style="justify-content:center"><div class="arrow"><span class="line">⟶</span></div></div>
+    <div class="box p" style="flex:1; display:flex; flex-direction:column; justify-content:center">
+      <span class="tag">③ Search</span><b style="font-size:17px">search_agent</b>Runs each query against Wikipedia and arXiv and summarises what it finds.<div style="margin-top:10px"><span class="label" style="display:block;margin-bottom:4px">tools</span><span class="chip p">search_wikipedia</span><span class="chip p">search_arxiv</span></div>
+    </div>
+    <div class="col" style="justify-content:center"><div class="arrow o"><span class="line">⟶</span></div></div>
+    <div class="col" style="width:240px; justify-content:center; gap:8px"><div class="label">output</div>
+      <div class="box a"><small style="color:#c2410c">saved to state as</small><b>"search"</b><small>read by the outline and study guide agents</small></div></div>
+  </div>
+</section>
+
+<section id="a_outline_agent" style="width:1000px">
+  <div class="row" style="align-items:stretch; gap:16px">
+    <div class="col" style="width:300px; gap:8px"><div class="label">inputs</div><div class="ag-in"><code>topic_overview</code><small>from ①</small></div><div class="ag-in"><code>search</code><small>from ③</small></div><div class="ag-in opt"><code>source_material</code><small>session state, if a PDF was uploaded (section 7)</small></div></div>
+    <div class="col" style="justify-content:center"><div class="arrow"><span class="line">⟶</span></div></div>
+    <div class="box p" style="flex:1; display:flex; flex-direction:column; justify-content:center">
+      <span class="tag">④ Outline</span><b style="font-size:17px">outline_agent</b>Plans the sections of the study guide, one line per section.
+    </div>
+    <div class="col" style="justify-content:center"><div class="arrow o"><span class="line">⟶</span></div></div>
+    <div class="col" style="width:240px; justify-content:center; gap:8px"><div class="label">output</div>
+      <div class="box a"><small style="color:#c2410c">saved to state as</small><b>"outline"</b><small>read by the study guide agent</small></div></div>
+  </div>
+</section>
+
+<section id="a_study_guide_agent" style="width:1000px">
+  <div class="row" style="align-items:stretch; gap:16px">
+    <div class="col" style="width:300px; gap:8px"><div class="label">inputs</div><div class="ag-in"><code>topic_overview</code><small>from ①</small></div><div class="ag-in"><code>search</code><small>from ③</small></div><div class="ag-in"><code>outline</code><small>from ④</small></div><div class="ag-in opt"><code>source_material</code><small>session state, if a PDF was uploaded (section 7)</small></div></div>
+    <div class="col" style="justify-content:center"><div class="arrow"><span class="line">⟶</span></div></div>
+    <div class="box p" style="flex:1; display:flex; flex-direction:column; justify-content:center">
+      <span class="tag">⑤ Study guide</span><b style="font-size:17px">study_guide_agent</b>Writes the full guide in Markdown, following the outline.
+    </div>
+    <div class="col" style="justify-content:center"><div class="arrow o"><span class="line">⟶</span></div></div>
+    <div class="col" style="width:240px; justify-content:center; gap:8px"><div class="label">output</div>
+      <div class="box a"><small style="color:#c2410c">saved to state as</small><b>"study_guide"</b><small>read by the Q&amp;A agent and shown in the Study Guide tab</small></div></div>
+  </div>
+</section>
+
+<section id="a_question_answer_agent" style="width:1000px">
+  <div class="row" style="align-items:stretch; gap:16px">
+    <div class="col" style="width:300px; gap:8px"><div class="label">inputs</div><div class="ag-in"><code>study_guide</code><small>from ⑤</small></div></div>
+    <div class="col" style="justify-content:center"><div class="arrow"><span class="line">⟶</span></div></div>
+    <div class="box p" style="flex:1; display:flex; flex-direction:column; justify-content:center">
+      <span class="tag">⑥ Practice questions</span><b style="font-size:17px">question_answer_agent</b>Writes 5 to 20 questions with answers and a difficulty level, as JSON.
+    </div>
+    <div class="col" style="justify-content:center"><div class="arrow o"><span class="line">⟶</span></div></div>
+    <div class="col" style="width:240px; justify-content:center; gap:8px"><div class="label">output</div>
+      <div class="box a"><small style="color:#c2410c">saved to state as</small><b>"question_answer"</b><small>shown as flashcards in the Q&amp;A tab</small></div></div>
+  </div>
+</section>
 </body></html>
